@@ -1,0 +1,30 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  --ink: #342f2e;
+  --paper: #f6ecea;
+  --accent: #8d5caf;
+  --ground: var(--paper);
+  --figure: var(--ink);
+  --font-display: 'Alexandria Variable', sans-serif;
+  --font-play: 'Dongle', sans-serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: var(--ink);
+    --figure: var(--paper);
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ground);
+  color: var(--figure);
+}

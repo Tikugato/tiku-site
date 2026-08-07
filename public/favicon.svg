@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <style>
+    .ribbon { stroke: #342f2e; }
+    @media (prefers-color-scheme: dark) {
+      .ribbon { stroke: #f6ecea; }
+    }
+  </style>
+  <g class="ribbon" fill="none" stroke-linejoin="miter" stroke-miterlimit="8">
+    <path d="M14 48 L26 30 L36 42 L92 42 L102 30 L114 48" stroke-width="14"/>
+    <path d="M64 46 L64 112" stroke-width="19"/>
+  </g>
+  <path d="M54.5 49 L73.5 49 L64 65 Z" fill="#8d5caf"/>
+</svg>
