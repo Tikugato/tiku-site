@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import {
   BANDANA_PATH,
   BAR_LEFT_PATH,
   BAR_RIGHT_PATH,
   BAR_TOP_EDGE,
   BAR_WIDTH,
-  STEM_PATH,
+  MARK_CENTER_X,
+  STEM,
   STEM_WIDTH,
 } from '../scene/markShape'
 
@@ -17,8 +18,26 @@ export interface SocialLink {
   copyText?: string
 }
 
-const props = defineProps<{ socials: SocialLink[]; skipIntro?: boolean }>()
+const props = defineProps<{
+  socials: SocialLink[]
+  skipIntro?: boolean
+  tailLength?: number
+  openProgress?: number
+}>()
 const emit = defineEmits<{ morph: [] }>()
+
+const stemPath = computed(
+  () => `M${MARK_CENTER_X} ${STEM.top} L${MARK_CENTER_X} ${STEM.bottom + (props.tailLength ?? 0)}`,
+)
+
+const open = computed(() => Math.min(Math.max(props.openProgress ?? 0, 0), 1))
+
+const barLeftStyle = computed(() => ({ transform: `translateX(${-open.value * 52}px)` }))
+const barRightStyle = computed(() => ({ transform: `translateX(${open.value * 52}px)` }))
+const socialsStyle = computed(() => ({
+  opacity: `${Math.max(1 - open.value * 2.2, 0)}`,
+  pointerEvents: open.value > 0.25 ? ('none' as const) : ('auto' as const),
+}))
 
 const ICON_SIZE = 13
 const ICON_GAP = 24
@@ -51,7 +70,7 @@ async function activate(social: SocialLink, event: Event): Promise<void> {
       </clipPath>
     </defs>
     <text v-if="copied" class="copied" x="64" y="12" text-anchor="middle" role="status">copied</text>
-    <g clip-path="url(#hero-above-bar)">
+    <g clip-path="url(#hero-above-bar)" :style="socialsStyle">
       <a
         v-for="(social, index) in socials"
         :key="social.name"
@@ -76,9 +95,9 @@ async function activate(social: SocialLink, event: Event): Promise<void> {
       </a>
     </g>
     <g class="ribbon">
-      <path class="stem" :d="STEM_PATH" :stroke-width="STEM_WIDTH" />
-      <path class="bar" :d="BAR_LEFT_PATH" :stroke-width="BAR_WIDTH" />
-      <path class="bar" :d="BAR_RIGHT_PATH" :stroke-width="BAR_WIDTH" />
+      <path class="stem" :d="stemPath" :stroke-width="STEM_WIDTH" />
+      <path class="bar" :d="BAR_LEFT_PATH" :stroke-width="BAR_WIDTH" :style="barLeftStyle" />
+      <path class="bar" :d="BAR_RIGHT_PATH" :stroke-width="BAR_WIDTH" :style="barRightStyle" />
     </g>
     <path
       class="bandana"
