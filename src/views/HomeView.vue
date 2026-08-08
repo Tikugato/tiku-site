@@ -31,6 +31,7 @@ let stemBottomAbs = 0
 
 const tailLength = computed(() => progress.value * maxTail)
 const openProgress = computed(() => Math.min(progress.value / 0.45, 1))
+const heroTextFade = computed(() => Math.max(1 - progress.value / 0.08, 0))
 
 function entryFraction(index: number): number {
   return 0.02 + ((index + 1) / (projects.length + 1)) * 0.22
@@ -159,7 +160,7 @@ onBeforeUnmount(() => {
           <MarkScene v-else class="hero-layer" @exit="mode = 'flat'" />
         </Transition>
       </div>
-      <div class="hero-text">
+      <div class="hero-text" :style="{ opacity: heroTextFade }">
         <h1 class="name">Tiku</h1>
         <p class="role">Software Developer</p>
       </div>

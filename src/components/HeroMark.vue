@@ -4,8 +4,10 @@ import {
   BANDANA_PATH,
   BAR_LEFT_PATH,
   BAR_RIGHT_PATH,
+  BAR_OPEN_SHIFT,
   BAR_TOP_EDGE,
   BAR_WIDTH,
+  BAR_Y,
   MARK_CENTER_X,
   STEM,
   STEM_WIDTH,
@@ -32,8 +34,12 @@ const stemPath = computed(
 
 const open = computed(() => Math.min(Math.max(props.openProgress ?? 0, 0), 1))
 
-const barLeftStyle = computed(() => ({ transform: `translateX(${-open.value * 52}px)` }))
-const barRightStyle = computed(() => ({ transform: `translateX(${open.value * 52}px)` }))
+const barLeftStyle = computed(() => ({ transform: `translateX(${-open.value * BAR_OPEN_SHIFT}px)` }))
+const barRightStyle = computed(() => ({ transform: `translateX(${open.value * BAR_OPEN_SHIFT}px)` }))
+const bridgePath = computed(() => {
+  const reach = open.value * (BAR_OPEN_SHIFT + 0.5)
+  return `M${MARK_CENTER_X - reach} ${BAR_Y} L${MARK_CENTER_X + reach} ${BAR_Y}`
+})
 const socialsStyle = computed(() => ({
   opacity: `${Math.max(1 - open.value * 2.2, 0)}`,
   pointerEvents: open.value > 0.25 ? ('none' as const) : ('auto' as const),
@@ -96,6 +102,7 @@ async function activate(social: SocialLink, event: Event): Promise<void> {
     </g>
     <g class="ribbon">
       <path class="stem" :d="stemPath" :stroke-width="STEM_WIDTH" />
+      <path class="bar-bridge" :d="bridgePath" :stroke-width="BAR_WIDTH" />
       <path class="bar" :d="BAR_LEFT_PATH" :stroke-width="BAR_WIDTH" :style="barLeftStyle" />
       <path class="bar" :d="BAR_RIGHT_PATH" :stroke-width="BAR_WIDTH" :style="barRightStyle" />
     </g>

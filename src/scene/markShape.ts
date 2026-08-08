@@ -9,10 +9,12 @@ export const STEM_WIDTH = 15
 export const STEM = { top: 44, bottom: 114 }
 export const BANDANA = { top: 45, tip: 60, halfWidth: STEM_WIDTH / 2 }
 
-const BAR_Y = 40
+export const BAR_Y = 40
 const EAR_PEAK_Y = 30
 const BAR_TIP_Y = 46
 const JOIN_OVERLAP = 0.5
+
+export const BAR_OPEN_SHIFT = 52
 
 export const BAR_TOP_EDGE = BAR_Y - BAR_WIDTH / 2
 
