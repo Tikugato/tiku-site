@@ -9,6 +9,22 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 let controller: AccStripesScene | null = null
 let resizeObserver: ResizeObserver | null = null
+let pageTop = 0
+let pageLeft = 0
+let stageWidth = 1
+let stageHeight = 1
+let pointerX = 0
+let pointerY = 0
+let pointerQueued = false
+
+function measureStage(host: HTMLElement): void {
+  const rect = host.getBoundingClientRect()
+  pageTop = rect.top + window.scrollY
+  pageLeft = rect.left + window.scrollX
+  stageWidth = Math.max(rect.width, 1)
+  stageHeight = Math.max(rect.height, 1)
+  controller?.resize(stageWidth, stageHeight)
+}
 
 async function boot(): Promise<void> {
   const canvas = canvasRef.value
@@ -16,11 +32,9 @@ async function boot(): Promise<void> {
   if (!canvas || !host) return
   const { AccStripesScene } = await import('../scene/accStripes')
   controller = new AccStripesScene(canvas)
-  resizeObserver = new ResizeObserver(() => {
-    if (host.clientWidth && host.clientHeight) controller?.resize(host.clientWidth, host.clientHeight)
-  })
+  resizeObserver = new ResizeObserver(() => measureStage(host))
   resizeObserver.observe(host)
-  controller.resize(host.clientWidth, host.clientHeight)
+  measureStage(host)
   apply()
 }
 
@@ -30,11 +44,22 @@ function apply(): void {
   controller.setRunning(props.active)
 }
 
+function processPointer(): void {
+  pointerQueued = false
+  controller?.pointerAt(
+    pointerX - pageLeft,
+    pointerY - (pageTop - window.scrollY),
+    stageWidth,
+    stageHeight,
+  )
+}
+
 function onPointerMove(event: PointerEvent): void {
-  const canvas = canvasRef.value
-  if (!canvas || !controller) return
-  const rect = canvas.getBoundingClientRect()
-  controller.pointerAt(event.clientX - rect.left, event.clientY - rect.top, rect.width, rect.height)
+  pointerX = event.clientX
+  pointerY = event.clientY
+  if (pointerQueued) return
+  pointerQueued = true
+  requestAnimationFrame(processPointer)
 }
 
 function onPointerLeave(): void {

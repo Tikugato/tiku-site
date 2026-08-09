@@ -42,7 +42,6 @@ class Mosaic {
   private readonly rgb: [number, number, number]
   private pending = 0
   private hovered: number | null = null
-  private prevHovered: number | null = null
 
   constructor(colorHex: string) {
     const canvas = document.createElement('canvas')
@@ -72,24 +71,26 @@ class Mosaic {
     this.ctx.fillRect((index % COLS) * CELL_PX, Math.floor(index / COLS) * CELL_PX, CELL_PX, CELL_PX)
   }
 
-  setHovered(index: number | null): void {
+  setHovered(index: number | null): boolean {
+    if (index === this.hovered) return false
+    const previous = this.hovered
     this.hovered = index
+    if (previous !== null) this.drawCell(previous)
+    if (index !== null) this.drawCell(index)
+    this.texture.needsUpdate = true
+    return true
   }
 
   private drawAll(): void {
     for (let i = 0; i < this.cells.length; i++) this.drawCell(i)
   }
 
-  step(dt: number): void {
+  step(dt: number): boolean {
     this.pending += dt
-    if (this.pending < REDRAW_INTERVAL) return
+    if (this.pending < REDRAW_INTERVAL) return false
     const elapsed = this.pending
     this.pending = 0
-    if (this.hovered !== this.prevHovered) {
-      if (this.prevHovered !== null) this.drawCell(this.prevHovered)
-      if (this.hovered !== null) this.drawCell(this.hovered)
-      this.prevHovered = this.hovered
-    }
+    let changed = false
     this.cells.forEach((cell, i) => {
       cell.wait -= elapsed
       if (cell.wait <= 0) {
@@ -100,9 +101,11 @@ class Mosaic {
       if (Math.abs(next - cell.brightness) > 0.0005) {
         cell.brightness = next
         this.drawCell(i)
+        changed = true
       }
     })
-    this.texture.needsUpdate = true
+    if (changed) this.texture.needsUpdate = true
+    return changed
   }
 
   dispose(): void {
@@ -120,6 +123,7 @@ export class AccStripesScene {
   private readonly beams: Mesh[]
   private progress = 0
   private offscreenX = -60
+  private dirty = true
   private lastTime = 0
   private frame = 0
   private running = false
@@ -153,9 +157,10 @@ export class AccStripesScene {
   }
 
   pointerAt(px: number, py: number, width: number, height: number): void {
+    if (this.progress <= 0) return
     const worldX = this.camera.position.x + this.camera.left + (px / width) * (this.camera.right - this.camera.left)
     const worldY = this.camera.position.y + this.camera.top - (py / height) * (this.camera.top - this.camera.bottom)
-    this.mosaics.forEach((mosaic) => mosaic.setHovered(null))
+    const hits: (number | null)[] = this.beams.map(() => null)
     for (let i = 0; i < this.beams.length; i++) {
       const mesh = this.beams[i]
       if (!mesh) continue
@@ -165,18 +170,29 @@ export class AccStripesScene {
       const ly = -dx * Math.sin(TILT) + dy * Math.cos(TILT)
       if (Math.abs(lx) > LENGTH / 2 || Math.abs(ly) > THICKNESS / 2) continue
       const col = Math.min(Math.floor(((lx + LENGTH / 2) / LENGTH) * COLS), COLS - 1)
-      const row = ly > 0 ? 0 : 1
-      this.mosaics[i]?.setHovered(row * COLS + col)
+      hits[i] = (ly > 0 ? 0 : 1) * COLS + col
       break
     }
+    this.applyHover(hits)
   }
 
   clearPointer(): void {
-    this.mosaics.forEach((mosaic) => mosaic.setHovered(null))
+    this.applyHover(this.beams.map(() => null))
+  }
+
+  private applyHover(hits: (number | null)[]): void {
+    let changed = false
+    this.mosaics.forEach((mosaic, i) => {
+      changed = mosaic.setHovered(hits[i] ?? null) || changed
+    })
+    if (changed) this.dirty = true
   }
 
   setProgress(value: number): void {
-    this.progress = Math.min(Math.max(value, 0), 1)
+    const clamped = Math.min(Math.max(value, 0), 1)
+    if (clamped === this.progress) return
+    this.progress = clamped
+    this.dirty = true
   }
 
   setRunning(run: boolean): void {
@@ -203,8 +219,13 @@ export class AccStripesScene {
     this.frame = requestAnimationFrame(this.tick)
     const dt = Math.min((time - this.lastTime) / 1000, 1 / 30)
     this.lastTime = time
+    let changed = this.dirty
+    this.mosaics.forEach((mosaic) => {
+      changed = mosaic.step(dt) || changed
+    })
+    if (!changed) return
+    this.dirty = false
     this.updateBeams()
-    this.mosaics.forEach((mosaic) => mosaic.step(dt))
     this.renderer.render(this.scene, this.camera)
   }
 

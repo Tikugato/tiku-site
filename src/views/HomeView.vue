@@ -17,8 +17,11 @@ const projects = [{ name: 'AccSaber', anchor: 'accsaber' }]
 const mode = ref<'flat' | 'scene'>('flat')
 const hasMorphed = ref(false)
 const progress = ref(0)
+const scrolled = ref(0)
 const sectionOverride = ref<number | null>(null)
 const entryYs = ref<number[]>([])
+const labelY = ref(0)
+const lastStopY = ref(Number.MAX_SAFE_INTEGER)
 const figureRef = ref<HTMLElement | null>(null)
 const descentRef = ref<HTMLElement | null>(null)
 
@@ -37,14 +40,18 @@ function entryFraction(index: number): number {
   return 0.02 + ((index + 1) / (projects.length + 1)) * 0.22
 }
 
-const reveals = computed(() => {
-  if (reducedMotion) return projects.map(() => 1)
+function revealAt(pageY: number): number {
+  if (reducedMotion) return 1
   const tipY = stemBottomAbs + tailLength.value * unitPx
-  return projects.map((_, i) => {
-    const entryY = entryYs.value[i] ?? Number.MAX_SAFE_INTEGER
-    return Math.min(Math.max((tipY - entryY) / 70, 0), 1)
-  })
-})
+  return Math.min(Math.max((tipY - pageY) / 70, 0), 1)
+}
+
+const reveals = computed(() =>
+  projects.map((_, i) => revealAt(entryYs.value[i] ?? Number.MAX_SAFE_INTEGER)),
+)
+const labelReveal = computed(() => revealAt(labelY.value || Number.MAX_SAFE_INTEGER))
+const pastHero = computed(() => scrolled.value > window.innerHeight * 0.4)
+const showPageDown = computed(() => scrolled.value < lastStopY.value - 40)
 
 function sceneSupported(): boolean {
   if (reducedMotion) return false
@@ -70,6 +77,10 @@ function measure(): void {
   const railEnd = descentBottom - window.innerHeight * 0.2
   maxTail = Math.max((railEnd - stemBottomAbs) / unitPx, 0)
   entryYs.value = projects.map((_, i) => descent.offsetTop + entryFraction(i) * descent.offsetHeight)
+  labelY.value = descent.offsetTop + 0.04 * descent.offsetHeight
+  const lastAnchor = projects[projects.length - 1]
+  const lastSection = lastAnchor ? document.getElementById(lastAnchor.anchor) : null
+  if (lastSection) lastStopY.value = lastSection.getBoundingClientRect().top + window.scrollY
 }
 
 function fastScrollTo(targetY: number, onDone: () => void): void {
@@ -97,20 +108,50 @@ function playSectionEntrance(): void {
   requestAnimationFrame(step)
 }
 
-function scrollToProject(anchor: string): void {
-  const target = document.getElementById(anchor)
-  if (!target) return
-  const targetY = target.getBoundingClientRect().top + window.scrollY
+function goTo(targetY: number, entrance: boolean): void {
   if (reducedMotion) {
     window.scrollTo(0, targetY)
     return
   }
-  sectionOverride.value = 0
-  fastScrollTo(targetY, playSectionEntrance)
+  if (entrance) {
+    sectionOverride.value = 0
+    fastScrollTo(targetY, playSectionEntrance)
+  } else {
+    fastScrollTo(targetY, () => {})
+  }
+}
+
+function sectionTop(anchor: string): number | null {
+  const target = document.getElementById(anchor)
+  return target ? target.getBoundingClientRect().top + window.scrollY : null
+}
+
+function scrollToProject(anchor: string): void {
+  const targetY = sectionTop(anchor)
+  if (targetY !== null) goTo(targetY, true)
+}
+
+function pageStops(): { y: number; entrance: boolean }[] {
+  const stops: { y: number; entrance: boolean }[] = [{ y: 0, entrance: false }]
+  const firstEntry = entryYs.value[0]
+  if (firstEntry !== undefined) {
+    stops.push({ y: Math.max(firstEntry - window.innerHeight * 0.45, 0), entrance: false })
+  }
+  for (const project of projects) {
+    const y = sectionTop(project.anchor)
+    if (y !== null) stops.push({ y, entrance: true })
+  }
+  return stops
+}
+
+function pageDown(): void {
+  const next = pageStops().find((stop) => stop.y > window.scrollY + 40)
+  if (next) goTo(next.y, next.entrance)
 }
 
 function updateProgress(): void {
-  progress.value = Math.min(Math.max(window.scrollY / endScroll, 0), 1)
+  scrolled.value = window.scrollY
+  if (!reducedMotion) progress.value = Math.min(Math.max(window.scrollY / endScroll, 0), 1)
 }
 
 function onScroll(): void {
@@ -128,7 +169,6 @@ function onResize(): void {
 }
 
 onMounted(() => {
-  if (reducedMotion) return
   requestAnimationFrame(() => {
     measure()
     updateProgress()
@@ -166,6 +206,13 @@ onBeforeUnmount(() => {
       </div>
     </section>
     <div ref="descentRef" class="descent">
+      <p
+        class="section-label"
+        :style="{ top: '4%', '--reveal': `${labelReveal}` }"
+        aria-hidden="true"
+      >
+        Projects
+      </p>
       <nav class="index" aria-label="Projects">
         <a
           v-for="(project, i) in projects"
@@ -187,6 +234,17 @@ onBeforeUnmount(() => {
       </nav>
     </div>
     <AccSaberSection id="accsaber" :progress-override="sectionOverride" />
+    <button
+      v-if="showPageDown"
+      class="page-down"
+      :class="{ 'on-dark': pastHero }"
+      aria-label="Next section"
+      @click="pageDown"
+    >
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M4 9 L12 17 L20 9" fill="none" stroke="currentColor" stroke-width="2.5" />
+      </svg>
+    </button>
   </main>
 </template>
 
@@ -207,6 +265,53 @@ onBeforeUnmount(() => {
   position: relative;
   height: 130vh;
   background: linear-gradient(to bottom, var(--ground), #141414);
+}
+
+.section-label {
+  position: absolute;
+  right: calc(50% + 44px);
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 2.4rem;
+  letter-spacing: 0.04em;
+  color: var(--figure);
+  opacity: var(--reveal);
+  transform: translateY(-50%) translateX(calc((1 - var(--reveal)) * 46px));
+}
+
+.page-down {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: 10px;
+  background: none;
+  border: none;
+  color: var(--figure);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 150ms ease-out, color 150ms ease-out;
+}
+
+.page-down:hover {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.page-down:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.page-down.on-dark {
+  color: var(--paper);
+}
+
+.page-down.on-dark:hover {
+  color: var(--accent);
 }
 
 .index-entry {
@@ -230,17 +335,17 @@ onBeforeUnmount(() => {
 }
 
 .branch {
-  width: clamp(48px, 7vw, 110px);
-  height: 12px;
+  width: clamp(56px, 8vw, 130px);
+  height: 16px;
   background: var(--figure);
 }
 
 .label {
   font-family: var(--font-play);
-  font-size: 2.2rem;
+  font-size: 3.2rem;
   line-height: 1;
   color: var(--figure);
-  padding: 0 14px;
+  padding: 0 16px;
 }
 
 .index-entry:hover .label,
