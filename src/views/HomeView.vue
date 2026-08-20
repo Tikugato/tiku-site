@@ -262,6 +262,7 @@ onBeforeUnmount(() => {
 }
 
 .descent {
+  --index-type: clamp(2rem, 7vw, 3.2rem);
   position: relative;
   height: 130vh;
   background: linear-gradient(to bottom, var(--ground), #141414);
@@ -273,7 +274,7 @@ onBeforeUnmount(() => {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 2.4rem;
+  font-size: calc(var(--index-type) * 0.75);
   letter-spacing: 0.04em;
   color: var(--figure);
   opacity: var(--reveal);
@@ -335,17 +336,17 @@ onBeforeUnmount(() => {
 }
 
 .branch {
-  width: clamp(56px, 8vw, 130px);
+  width: clamp(36px, 8vw, 130px);
   height: 16px;
   background: var(--figure);
 }
 
 .label {
   font-family: var(--font-play);
-  font-size: 3.2rem;
+  font-size: var(--index-type);
   line-height: 1;
   color: var(--figure);
-  padding: 0 16px;
+  padding: 0 clamp(8px, 2vw, 16px);
 }
 
 .index-entry:hover .label,
