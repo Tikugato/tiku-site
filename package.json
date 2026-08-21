@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite --mode tikugato",
     "dev:prv": "vite --mode prv",
-    "build": "run-p type-check \"build-only -- --mode tikugato\"",
-    "build:prv": "run-p type-check \"build-only -- --mode prv\"",
+    "build": "run-p type-check build-tikugato",
+    "build:prv": "run-p type-check build-prv",
+    "build-tikugato": "vite build --mode tikugato",
+    "build-prv": "vite build --mode prv",
     "preview": "vite preview",
-    "build-only": "vite build",
     "type-check": "vue-tsc --build"
   },
   "dependencies": {

@@ -14,17 +14,32 @@ function siteTitle(title: string): Plugin {
   }
 }
 
+function resolveTitle(site: string, mode: string): string {
+  const env = loadEnv(mode, process.cwd(), 'VITE_')
+  const provided = REQUIRED_ENV.filter((key) => env[key])
+  if (site !== 'prv') {
+    if (provided.length) {
+      throw new Error(
+        `${provided.join(', ')} set but --mode prv was not passed, so this would ship ` +
+          `the tikugato site. Use "npm run build:prv" as the build command.`,
+      )
+    }
+    return TIKUGATO_TITLE
+  }
+  const missing = REQUIRED_ENV.filter((key) => !env[key])
+  if (missing.length) {
+    throw new Error(
+      `Missing ${missing.join(', ')}. Set these in .env.prv.local locally, ` +
+        `or as Cloudflare build variables (the Build section, not runtime).`,
+    )
+  }
+  return env.VITE_SITE_TITLE as string
+}
+
 export default defineConfig(({ mode }) => {
   const site = mode === 'prv' ? 'prv' : 'tikugato'
-  let title = TIKUGATO_TITLE
-  if (site === 'prv') {
-    const env = loadEnv(mode, process.cwd(), 'VITE_')
-    const missing = REQUIRED_ENV.filter((key) => !env[key])
-    if (missing.length) {
-      throw new Error(`.env.prv.local is missing ${missing.join(', ')}. Copy .env.prv.example.`)
-    }
-    title = env.VITE_SITE_TITLE as string
-  }
+  const title = resolveTitle(site, mode)
+  console.log(`[identity] building ${site} (mode=${mode})`)
   return {
     publicDir: `public/${site}`,
     plugins: [
