@@ -20,8 +20,8 @@ function resolveTitle(site: string, mode: string): string {
   if (site !== 'prv') {
     if (provided.length) {
       throw new Error(
-        `${provided.join(', ')} set but --mode prv was not passed, so this would ship ` +
-          `the tikugato site. Use "npm run build:prv" as the build command.`,
+        `${provided.join(', ')} set but the prv identity was not selected, so this would ` +
+          `ship the tikugato site. Set SITE_IDENTITY=prv as a build variable.`,
       )
     }
     return TIKUGATO_TITLE
@@ -37,7 +37,7 @@ function resolveTitle(site: string, mode: string): string {
 }
 
 export default defineConfig(({ mode }) => {
-  const site = mode === 'prv' ? 'prv' : 'tikugato'
+  const site = mode === 'prv' || process.env.SITE_IDENTITY === 'prv' ? 'prv' : 'tikugato'
   const title = resolveTitle(site, mode)
   console.log(`[identity] building ${site} (mode=${mode})`)
   return {
