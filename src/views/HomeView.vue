@@ -1,16 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { siDiscord, siGithub, siX } from 'simple-icons'
+import { identity } from '@identity'
 import AccSaberSection from '../components/AccSaberSection.vue'
-import HeroMark from '../components/HeroMark.vue'
-import MarkScene from '../components/MarkScene.vue'
-import { STEM } from '../scene/markShape'
-
-const socials = [
-  { name: 'GitHub', url: 'https://github.com/Tikugato', iconPath: siGithub.path },
-  { name: 'Discord', copyText: 'tikugato', iconPath: siDiscord.path },
-  { name: 'X', url: 'https://x.com/Tikugato', iconPath: siX.path },
-]
 
 const projects = [{ name: 'AccSaber', anchor: 'accsaber' }]
 
@@ -22,6 +13,7 @@ const sectionOverride = ref<number | null>(null)
 const entryYs = ref<number[]>([])
 const labelY = ref(0)
 const lastStopY = ref(Number.MAX_SAFE_INTEGER)
+const spineX = ref(0)
 const figureRef = ref<HTMLElement | null>(null)
 const descentRef = ref<HTMLElement | null>(null)
 
@@ -54,7 +46,7 @@ const pastHero = computed(() => scrolled.value > window.innerHeight * 0.4)
 const showPageDown = computed(() => scrolled.value < lastStopY.value - 40)
 
 function sceneSupported(): boolean {
-  if (reducedMotion) return false
+  if (reducedMotion || !identity.scene) return false
   const probe = document.createElement('canvas')
   return Boolean(probe.getContext('webgl2') ?? probe.getContext('webgl'))
 }
@@ -71,7 +63,8 @@ function measure(): void {
   if (!figure || !descent) return
   const rect = figure.getBoundingClientRect()
   unitPx = rect.width / 128
-  stemBottomAbs = rect.top + window.scrollY + (STEM.bottom / 128) * rect.height
+  stemBottomAbs = rect.top + window.scrollY + (identity.spine.bottom / 128) * rect.height
+  spineX.value = rect.left + (identity.spine.x / 128) * rect.width
   const descentBottom = descent.offsetTop + descent.offsetHeight
   endScroll = Math.max(descentBottom - window.innerHeight, 1)
   const railEnd = descentBottom - window.innerHeight * 0.2
@@ -188,24 +181,25 @@ onBeforeUnmount(() => {
     <section class="hero">
       <div ref="figureRef" class="hero-figure">
         <Transition name="morph">
-          <HeroMark
+          <component
+            :is="identity.hero"
             v-if="mode === 'flat'"
-            :socials="socials"
+            :links="identity.links"
             :skip-intro="hasMorphed"
             :tail-length="tailLength"
             :open-progress="openProgress"
             class="hero-layer"
             @morph="enterScene"
           />
-          <MarkScene v-else class="hero-layer" @exit="mode = 'flat'" />
+          <component :is="identity.scene" v-else class="hero-layer" @exit="mode = 'flat'" />
         </Transition>
       </div>
       <div class="hero-text" :style="{ opacity: heroTextFade }">
-        <h1 class="name">Tiku</h1>
-        <p class="role">Software Developer</p>
+        <h1 class="name">{{ identity.name }}</h1>
+        <p class="role">{{ identity.role }}</p>
       </div>
     </section>
-    <div ref="descentRef" class="descent">
+    <div ref="descentRef" class="descent" :style="{ '--spine': `${spineX}px` }">
       <p
         class="section-label"
         :style="{ top: '4%', '--reveal': `${labelReveal}` }"
@@ -270,7 +264,7 @@ onBeforeUnmount(() => {
 
 .section-label {
   position: absolute;
-  right: calc(50% + 44px);
+  right: calc(100% - var(--spine) + 44px);
   margin: 0;
   font-family: var(--font-display);
   font-weight: 600;
@@ -325,12 +319,12 @@ onBeforeUnmount(() => {
 }
 
 .index-entry.right {
-  left: 50%;
+  left: var(--spine);
   transform: translateY(-50%) translateX(calc((1 - var(--reveal)) * -28px));
 }
 
 .index-entry.left {
-  right: 50%;
+  right: calc(100% - var(--spine));
   flex-direction: row-reverse;
   transform: translateY(-50%) translateX(calc((1 - var(--reveal)) * 28px));
 }

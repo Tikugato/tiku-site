@@ -1,7 +1,4 @@
-export interface MarkPoint {
-  x: number
-  y: number
-}
+import { polyline, type MarkPoint } from './strokePath'
 
 export const MARK_CENTER_X = 64
 export const BAR_WIDTH = 10
@@ -26,10 +23,6 @@ export const BAR_POINTS: MarkPoint[] = [
   { x: 106, y: EAR_PEAK_Y },
   { x: 118, y: BAR_TIP_Y },
 ]
-
-function polyline(points: MarkPoint[]): string {
-  return points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x} ${p.y}`).join(' ')
-}
 
 export const BAR_LEFT_PATH = polyline([
   ...BAR_POINTS.slice(0, 3),

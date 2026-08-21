@@ -1,5 +1,6 @@
 import { ExtrudeGeometry, Shape } from 'three'
-import { BAR_POINTS, BAR_WIDTH, MARK_CENTER_X, STEM, STEM_WIDTH, type MarkPoint } from './markShape'
+import { BAR_POINTS, BAR_WIDTH, MARK_CENTER_X, STEM, STEM_WIDTH } from './markShape'
+import type { MarkPoint } from './strokePath'
 
 export const EXTRUDE_DEPTH = 1.2
 export const MARK_SCALE = 0.1

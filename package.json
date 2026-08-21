@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "dev": "vite --mode tikugato",
+    "dev:prv": "vite --mode prv",
+    "build": "run-p type-check \"build-only -- --mode tikugato\"",
+    "build:prv": "run-p type-check \"build-only -- --mode prv\"",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build"

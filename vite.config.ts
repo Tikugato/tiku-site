@@ -1,18 +1,42 @@
 import { fileURLToPath, URL } from 'node:url'
 
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+const REQUIRED_ENV = ['VITE_SITE_TITLE', 'VITE_SITE_NAME', 'VITE_LINKEDIN_URL']
+const TIKUGATO_TITLE = 'Tiku'
+
+function siteTitle(title: string): Plugin {
+  return {
+    name: 'site-title',
+    transformIndexHtml: (html) => html.replace('%SITE_TITLE%', title),
+  }
+}
+
+export default defineConfig(({ mode }) => {
+  const site = mode === 'prv' ? 'prv' : 'tikugato'
+  let title = TIKUGATO_TITLE
+  if (site === 'prv') {
+    const env = loadEnv(mode, process.cwd(), 'VITE_')
+    const missing = REQUIRED_ENV.filter((key) => !env[key])
+    if (missing.length) {
+      throw new Error(`.env.prv.local is missing ${missing.join(', ')}. Copy .env.prv.example.`)
+    }
+    title = env.VITE_SITE_TITLE as string
+  }
+  return {
+    publicDir: `public/${site}`,
+    plugins: [
+      vue(),
+      vueDevTools(),
+      siteTitle(title),
+    ],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url)),
+        '@identity': fileURLToPath(new URL(`./src/identity/${site}.ts`, import.meta.url)),
+      },
     },
-  },
+  }
 })

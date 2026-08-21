@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import type { HeroLink } from '../identity/types'
 import {
   BANDANA_PATH,
   BAR_LEFT_PATH,
@@ -13,15 +14,8 @@ import {
   STEM_WIDTH,
 } from '../scene/markShape'
 
-export interface SocialLink {
-  name: string
-  iconPath: string
-  url?: string
-  copyText?: string
-}
-
 const props = defineProps<{
-  socials: SocialLink[]
+  links: HeroLink[]
   skipIntro?: boolean
   tailLength?: number
   openProgress?: number
@@ -52,11 +46,11 @@ const copied = ref(false)
 let copyTimer = 0
 
 function iconX(index: number): number {
-  const offset = index - (props.socials.length - 1) / 2
+  const offset = index - (props.links.length - 1) / 2
   return 64 + offset * ICON_GAP - ICON_SIZE / 2
 }
 
-async function activate(social: SocialLink, event: Event): Promise<void> {
+async function activate(social: HeroLink, event: Event): Promise<void> {
   if (!social.copyText) return
   event.preventDefault()
   await navigator.clipboard.writeText(social.copyText)
@@ -78,7 +72,7 @@ async function activate(social: SocialLink, event: Event): Promise<void> {
     <text v-if="copied" class="copied" x="64" y="12" text-anchor="middle" role="status">copied</text>
     <g clip-path="url(#hero-above-bar)" :style="socialsStyle">
       <a
-        v-for="(social, index) in socials"
+        v-for="(social, index) in links"
         :key="social.name"
         class="social"
         :href="social.url"
@@ -103,8 +97,8 @@ async function activate(social: SocialLink, event: Event): Promise<void> {
     <g class="ribbon">
       <path class="stem" :d="stemPath" :stroke-width="STEM_WIDTH" />
       <path class="bar-bridge" :d="bridgePath" :stroke-width="BAR_WIDTH" />
-      <path class="bar" :d="BAR_LEFT_PATH" :stroke-width="BAR_WIDTH" :style="barLeftStyle" />
-      <path class="bar" :d="BAR_RIGHT_PATH" :stroke-width="BAR_WIDTH" :style="barRightStyle" />
+      <path class="bar" pathLength="1" :d="BAR_LEFT_PATH" :stroke-width="BAR_WIDTH" :style="barLeftStyle" />
+      <path class="bar" pathLength="1" :d="BAR_RIGHT_PATH" :stroke-width="BAR_WIDTH" :style="barRightStyle" />
     </g>
     <path
       class="bandana"
@@ -138,7 +132,7 @@ async function activate(social: SocialLink, event: Event): Promise<void> {
 }
 
 .bar {
-  stroke-dasharray: 67;
+  stroke-dasharray: 1;
   animation: bar-draw 0.7s cubic-bezier(0.45, 0, 0.55, 1) 0.25s both;
 }
 
@@ -197,7 +191,7 @@ async function activate(social: SocialLink, event: Event): Promise<void> {
 
 @keyframes bar-draw {
   from {
-    stroke-dashoffset: 67;
+    stroke-dashoffset: 1;
   }
   to {
     stroke-dashoffset: 0;
