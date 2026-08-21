@@ -6,6 +6,7 @@ import {
   CAP_TOP_EDGE,
   DIAGONAL_WIDTH,
   LETTER_WIDTH,
+  LOCKUP_CENTER_X,
   PART_SHIFT,
   P_BOWL_PATH,
   P_STEM_PATH,
@@ -51,7 +52,7 @@ let copyTimer = 0
 
 function iconX(index: number): number {
   const offset = index - (props.links.length - 1) / 2
-  return SPINE.x + offset * ICON_GAP - ICON_SIZE / 2
+  return LOCKUP_CENTER_X + offset * ICON_GAP - ICON_SIZE / 2
 }
 
 async function activate(link: HeroLink, event: Event): Promise<void> {
@@ -76,7 +77,7 @@ async function activate(link: HeroLink, event: Event): Promise<void> {
         <rect x="-300" :y="CAP_TOP_EDGE" width="800" :height="BASELINE - CAP_TOP_EDGE" />
       </clipPath>
     </defs>
-    <text v-if="copied" class="copied" :x="SPINE.x" y="14" text-anchor="middle" role="status">
+    <text v-if="copied" class="copied" :x="LOCKUP_CENTER_X" y="14" text-anchor="middle" role="status">
       copied
     </text>
     <g clip-path="url(#hero-above-caps)" :style="linksStyle">

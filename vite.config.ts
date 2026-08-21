@@ -6,11 +6,18 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 const REQUIRED_ENV = ['VITE_SITE_TITLE', 'VITE_SITE_NAME', 'VITE_LINKEDIN_URL']
 const TIKUGATO_TITLE = 'Tiku'
+const RASTER_ICONS = [
+  '<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">',
+  '<link rel="apple-touch-icon" href="/apple-touch-icon.png">',
+].join('\n    ')
 
-function siteTitle(title: string): Plugin {
+function htmlHead(title: string, site: string): Plugin {
   return {
-    name: 'site-title',
-    transformIndexHtml: (html) => html.replace('%SITE_TITLE%', title),
+    name: 'html-head',
+    transformIndexHtml: (html) =>
+      html
+        .replace('%SITE_TITLE%', title)
+        .replace('%ICON_LINKS%', site === 'prv' ? '' : RASTER_ICONS),
   }
 }
 
@@ -45,7 +52,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       vueDevTools(),
-      siteTitle(title),
+      htmlHead(title, site),
     ],
     resolve: {
       alias: {

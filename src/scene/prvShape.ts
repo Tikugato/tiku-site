@@ -10,6 +10,7 @@ const HALF = LETTER_WIDTH / 2
 
 export const CAP_TOP_EDGE = CAP_TOP - HALF
 
+export const LOCKUP_CENTER_X = 64
 export const SPINE = { x: 49, top: CAP_TOP, bottom: BASELINE }
 export const P_STEM_X = 13
 export const PART_SHIFT = 56
